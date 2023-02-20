@@ -1,10 +1,3 @@
-//
-//  ViewController.swift
-//  Tipsy
-//
-//  Created by Angela Yu on 09/09/2019.
-//  Copyright © 2019 The App Brewery. All rights reserved.
-//
 
 import UIKit
 
@@ -16,51 +9,50 @@ class CalculatorViewController: UIViewController {
     @IBOutlet weak var twentyPctButton: UIButton!
     @IBOutlet weak var splitNumberLabel: UILabel!
     
-    var tip = 0.10
-    var numberOfPeople = 2
-    var billTotal = 0.0
-    var finalResult = "0.0"
+    var tipsyBrain  = TipsyBrain()
+    var tipSeleccionado = 10.0
+    var cantidadDePersonas = 2
+    var inputValue = 0.0
+    var resultadoCalculado = 0.0
     
     @IBAction func tipChanged(_ sender: UIButton) {
-        
-        billTextField.endEditing(true)
-        
+        // desmarco todo para que solo se seleccione el sender
         zeroPctButton.isSelected = false
         tenPctButton.isSelected = false
         twentyPctButton.isSelected = false
         sender.isSelected = true
-        
-        let buttonTitle = sender.currentTitle!
-        let buttonTitleMinusPercentSign =  String(buttonTitle.dropLast())
-        let buttonTitleAsANumber = Double(buttonTitleMinusPercentSign)!
-        tip = buttonTitleAsANumber / 100
-
+        // variable local para editar input: convertirlo en doble y eliminar el %
+        let tip1 = sender.titleLabel?.text!
+        tipSeleccionado = Double(tip1!.dropLast())!
+        // para que desaparezca el keyboard al seleccionar el tip
+        billTextField.endEditing(true)
     }
     
     @IBAction func stepperValueChanged(_ sender: UIStepper) {
-        splitNumberLabel.text = String(format: "%.0f", sender.value)
-        numberOfPeople = Int(sender.value)
+        cantidadDePersonas = Int(sender.value)
+        splitNumberLabel.text = String(cantidadDePersonas)
     }
     
     @IBAction func calculatePressed(_ sender: UIButton) {
+        let decimalTip = tipsyBrain.decimalTip(tip: tipSeleccionado)
         
-        let bill = billTextField.text!
-        if bill != "" {
-            billTotal = Double(bill)!
-            let result = billTotal * (1 + tip) / Double(numberOfPeople)
-            finalResult = String(format: "%.2f", result)
-        }
-        self.performSegue(withIdentifier: "goToResults", sender: self)
+        // si el input viene con coma, tengo que convertirla en punto
+        let textoInput = String(billTextField.text!)
+        let textoConComaCambiadaPorPunto = tipsyBrain.checkComa(textoIngresado: textoInput)
+        
+        inputValue = Double(textoConComaCambiadaPorPunto) ?? 0.0
+        
+        resultadoCalculado = tipsyBrain.calcular(gasto: inputValue, tip: decimalTip, personas: Double(cantidadDePersonas))
+
+        self.performSegue(withIdentifier: "goToHere", sender: self)
+
     }
-    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        
-        if segue.identifier == "goToResults" {
-            
+        if segue.identifier == "goToHere" {
             let destinationVC = segue.destination as! ResultsViewController
-            destinationVC.result = finalResult
-            destinationVC.tip = Int(tip * 100)
-            destinationVC.split = numberOfPeople
+            destinationVC.resultadoValue = String(format: "%.2f", resultadoCalculado)
+            destinationVC.numberOfPeople = String(cantidadDePersonas)
+            destinationVC.tip = String(format: "%.0f", tipSeleccionado)
         }
     }
 }
